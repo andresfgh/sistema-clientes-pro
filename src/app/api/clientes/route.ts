@@ -45,3 +45,24 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Fallo al procesar la peticion de registro' }, { status: 500 });
     }
 }
+
+// Endpoint para listar el directorio de clientes
+export async function GET() {
+    try {
+        // Recuperacion de la coleccion completa ordenados por fecha de creacion descendente
+        const clientes = await prisma.cliente.findMany({
+            include: {
+                direcciones: true,
+                documentos: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        return NextResponse.json(clientes, { status: 200 });
+    } catch (error) {
+        console.error('[CLIENTES_GET_ERROR]', error);
+        return NextResponse.json({ error: 'Fallo al recuperar la lista de clientes' }, { status: 500 });
+    }
+}
