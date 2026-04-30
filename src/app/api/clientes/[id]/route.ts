@@ -2,17 +2,18 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { registrarAuditoria } from '@/core/services/audit.service';
 
-// Estructura esperada para los parametros de ruta dinamica
+// Actualizacion arquitectonica: En Next.js moderno, 'params' es una Promesa.
 interface RouteParams {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
-// Recupera el detalle completo de un cliente especifico
 export async function GET(request: Request, { params }: RouteParams) {
     try {
-        const { id } = params;
+        // Resolvemos la promesa de los parametros antes de desestructurar
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
 
         const cliente = await prisma.cliente.findUnique({
             where: { id },
@@ -33,21 +34,19 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 }
 
-// Actualizacion total del recurso (Reemplazo de relaciones)
 export async function PUT(request: Request, { params }: RouteParams) {
     try {
-        const { id } = params;
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+        
         const body = await request.json();
         const { nombres, apellidos, fechaNacimiento, direcciones, documentos } = body;
 
-        // Verificacion previa de existencia
         const clienteExistente = await prisma.cliente.findUnique({ where: { id } });
         if (!clienteExistente) {
             return NextResponse.json({ error: 'Cliente no encontrado para actualizar' }, { status: 404 });
         }
 
-        // Ejecucion de actualizacion transaccional
-        // Se eliminan las relaciones debiles previas y se insertan las nuevas para garantizar paridad con el frontend
         const clienteActualizado = await prisma.cliente.update({
             where: { id },
             data: {
@@ -83,12 +82,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 }
 
-// Eliminacion fisica del recurso y sus dependencias (Cascade)
 export async function DELETE(request: Request, { params }: RouteParams) {
     try {
-        const { id } = params;
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
 
-        // Se recupera el estado previo para conservar el registro en la auditoria
         const clientePrevio = await prisma.cliente.findUnique({
             where: { id },
             include: { direcciones: true, documentos: true }
@@ -109,7 +107,6 @@ export async function DELETE(request: Request, { params }: RouteParams) {
             usuarioId: 'SYSTEM'
         });
 
-        // Respuesta 204 No Content estandar para eliminaciones exitosas
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.error('[CLIENTE_DELETE_ERROR]', error);

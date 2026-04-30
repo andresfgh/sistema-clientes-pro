@@ -8,7 +8,6 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { nombres, apellidos, fechaNacimiento, direcciones, documentos } = body;
 
-        // Prisma ejecuta un "Nested Write" transaccional. 
         // Si falla la insercion de un documento, la creacion del cliente hace rollback automaticamente.
         const nuevoCliente = await prisma.cliente.create({
             data: {
