@@ -1,0 +1,22 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  db:
+    # Uso de la version alpine para minimizar el peso de la imagen
+    image: postgres:15-alpine
+    container_name: postgres_clientes
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: db_clientes
+    ports:
+      # Mapeo del puerto interno del contenedor al puerto local de la maquina
+      - "5432:5432"
+    volumes:
+      # Persistencia de datos para que la informacion no se pierda al apagar el contenedor
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
