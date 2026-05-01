@@ -1,12 +1,14 @@
 
+
 services:
   postgres:
     image: postgres:15-alpine
     container_name: db_clientes
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
-      POSTGRES_DB: db_clientes
+      # la BD nace con las variables del env local
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5433:5432"
     volumes:
@@ -14,7 +16,7 @@ services:
     networks:
       - app-network
 
-  # Nueva configuracion para la aplicacion Next.js
+  # Configuracion para la aplicacion Next.js
   web:
     build:
       context: .
@@ -23,9 +25,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Sobrescribimos la variable para que apunte al contenedor de base de datos, no a localhost
-      - DATABASE_URL=postgresql://root:rootpassword@postgres:5432/db_clientes?schema=public
-      - JWT_SECRET=nfwBqMFszntxAKHDnIkBOE+ns+/L0gwmQQNvAjAwEtU=
+      # Inyectamos las variables
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - postgres
     networks:

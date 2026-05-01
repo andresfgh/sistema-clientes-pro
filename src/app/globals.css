@@ -1,8 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* Configuracion de color de fondo base para toda la aplicacion */
+@theme {
+  --color-primary-brand: #019df4;
+  --color-secondary-brand: #66bef5;
+  --color-bg-main: #f5f5f5;
+}
+
 body {
-  background-color: #f3f4f6; /* color gray-100 de Tailwind */
+  background-color: var(--color-bg-main);
+  color: #1e293b;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }

@@ -1,129 +1,75 @@
-# 🏢 Sistema de Administración de Clientes
+# Sistema Administrativo de Clientes
 
-Plataforma empresarial orientada a la gestión de clientes bajo una arquitectura maestro-detalle. Diseñada con un enfoque estricto en alto rendimiento, seguridad y una experiencia de despliegue automatizada.
+Este repositorio contiene el código fuente del Sistema Integrado de Gestión de Clientes, una plataforma de *Backoffice* desarrollada bajo los principios de **Clean Architecture**. La aplicación ha sido diseñada con un enfoque estrictamente funcional, priorizando la densidad de datos, la velocidad operativa y la trazabilidad, características esenciales para entornos de gestión corporativa tipo *AdminLTE*.
 
 ---
 
-## 🚀 Puesta en Marcha Rápida (Recomendado)
+## 🚀 Características Principales
 
-El entorno está completamente dockerizado para garantizar su ejecución aislada en cualquier sistema. Solo requieres tener Git, Docker y Docker Compose instalados.
+*   **Arquitectura Transaccional Robusta:** Implementación de un patrón de Repositorio/Servicio. Las operaciones maestras y de detalle (creación y edición de Clientes, Direcciones y Documentos) son completamente atómicas bajo transacciones de base de datos.
+*   **Interfaz de Usuario Ultra-Compacta:** Interfaz diseñada sin elementos distractivos, maximizando el espacio para los datos. Estilo corporativo "plano" sin sombras, usando Tailwind CSS v4.
+*   **Auditoría y Trazabilidad (Timeline):** Todo cambio (`CREATE`, `UPDATE`, `DELETE`, `REACTIVATE`) queda registrado de manera inmutable con estampa de tiempo y el identificador del usuario que lo realizó.
+*   **Gestión de Estado (Soft Delete):** Eliminación lógica de los registros en la base de datos para preservar la integridad referencial en todo momento.
+*   **Exportación Dinámica de CSV:** 
+    *   *Masiva:* Descarga de todo el listado de clientes activos con nombre autogenerado (`reporte_clientes_general_YYYY-MM-DD.csv`).
+    *   *Individual:* Descarga específica sanitizada (ej. `cliente_nombres_apellidos_id.csv`). Las múltiples direcciones y documentos se concatenan automáticamente en el CSV.
 
-### Flujo de Instalación
+---
 
-1. Clonar el Repositorio
+## 🛠️ Stack Tecnológico
 
-git clone -b main https://github.com/andresfgh/sistema-clientes-pro.git
-cd sistema-clientes-pro
+El proyecto está construido utilizando tecnologías modernas pero estabilizadas para garantizar mantenibilidad a largo plazo:
 
+*   **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4 (Nativo usando `@import 'tailwindcss'`).
+*   **Backend API:** Route Handlers de Next.js, conectando la vista con los Controladores/Servicios.
+*   **Capa de Datos:** Prisma ORM v5, PostgreSQL 15.
+*   **Infraestructura:** Docker y Docker Compose para un ambiente agnóstico y de rápida integración.
 
-2. Levantar Infraestructura (Construcción Multi-Stage optimizada)
+---
 
+## 📦 Instrucciones de Despliegue (Docker)
+
+El sistema ha sido "dockerizado" utilizando imágenes ligeras de Alpine Linux (`node:20-alpine`) a través de un *Multi-stage build* para minimizar el peso del contenedor de producción.
+
+### 1. Variables de Entorno
+Asegúrese de contar con un archivo `.env` en la raíz del proyecto. Puede usar el archivo de ejemplo proporcionado:
+```bash
+cp .env.example .env
+```
+
+### 2. Ejecutar Contenedores
+Para compilar la aplicación y levantar la base de datos de PostgreSQL, ejecute en su terminal:
+```bash
 docker-compose up -d --build
+```
+*Este comando instalará las dependencias, ejecutará automáticamente las migraciones de Prisma y levantará la plataforma de forma local.*
 
-3. Sincronización de Base de Datos (Migraciones de Prisma)
+### 3. Acceso a la Plataforma
+El portal administrativo estará disponible en su navegador en:
+**[http://localhost:3000](http://localhost:3000)**
 
-docker exec -it app_clientes npx prisma migrate deploy
-
-4. Población de Datos Maestros (Seed de Administrador)
-
-docker exec -it app_clientes npx prisma db seed
-
-
-🌐 Acceso al sistema: [http://localhost:3000](http://localhost:3000)
+*(Credenciales provistas por la administración para pruebas de entorno local).*
 
 ---
 
-## ⚙️ Configuración Obligatoria (.env)
-Es estrictamente necesario crear un archivo llamado .env en la raíz del proyecto antes de iniciar los contenedores. Sin estas variables, el motor de Prisma y el sistema de autenticación no podrán inicializarse.
+## 🏗️ Estructura del Código
 
-Crea el archivo .env en la raíz del proyecto con las siguientes variables:
+El proyecto está organizado aislando la lógica de negocio de la capa de presentación:
 
-dotenv# URL de conexión hacia el contenedor PostgreSQL local
-    DATABASE_URL="postgresql://root:rootpassword@localhost:5432/db_clientes?schema=public"
-
-Clave criptográfica para firma de tokens JWT (HS256)
-    JWT_SECRET="tu_clave_secreta_generada_en_base64"
-
-Nota sobre DATABASE_URL: El host localhost aplica cuando PostgreSQL corre como contenedor con el puerto expuesto al host. Si desplegaras ambos servicios dentro de la misma red Docker, el host debe ser el nombre del servicio (postgres).
-
-Nota sobre JWT_SECRET: El algoritmo HS256 requiere una clave simétrica en Base64 de al menos 32 bytes. 
-
----
-
-## 🔐 Credenciales de Acceso (Entorno de Pruebas)
-
-| Campo         | Valor           |
-| Usuario       | admin           |
-| Contraseña    |  adminpassword  |
+```text
+/src
+├── app/               # Enrutamiento UI (Next.js App Router) y Endpoints REST (/api)
+├── components/        # Componentes de presentación (ClientForm, UI compartida)
+├── core/
+│   ├── interfaces/    # Definiciones estables (DTOs, Types)
+│   └── services/      # Casos de uso y lógica transaccional (ClienteService, AuditService)
+└── lib/               # Utilidades de infraestructura (Instancia de Base de Datos Prisma)
+```
 
 ---
 
-## 🧠 Arquitectura y Decisiones Técnicas
+## 📝 Estándares de Desarrollo Adoptados
 
-Como solución de grado empresarial, se implementaron los siguientes pilares técnicos:
-
-- Clean Architecture: Separación clara entre la capa de Dominio (Interfaces y Servicios en  src/core ), la capa de Infraestructura (Prisma y DB en  src/lib ) y la capa de Presentación/API ( src/app ).
-- Despliegue Multi-Stage: El  Dockerfile  utiliza una etapa de *builder* para compilar la aplicación y una etapa de *runner* basada en Alpine Linux para reducir el tamaño de la imagen final y mejorar la seguridad.
-- Seguridad mediante HttpOnly Cookies: Implementación de JWT con la librería  jose . Los tokens se gestionan exclusivamente vía cookies con flags  HttpOnly  y  Secure , mitigando ataques de robo de sesión por XSS.
-- Integridad con Transacciones Atómicas: Las operaciones maestro-detalle (Cliente + N Direcciones + N Documentos) se ejecutan mediante  $transaction  de Prisma, asegurando consistencia total de datos.
-- Auditoría de Operaciones: El sistema incluye un servicio de auditoría ( audit.service.ts ) que registra de forma inmutable las acciones críticas (Create, Update, Delete) para trazabilidad.
-
----
-
-## 📂 Estructura del Proyecto
-
-text
-src/
-├── app/                  # Route Handlers (API) y Server Components (Vistas)
-├── components/           # UI Components (Atomic Design orientado a Tailwind)
-├── core/                 # Núcleo del Sistema (Independiente del Framework)
-│   ├── interfaces/       # Definiciones de tipos y DTOs
-│   └── services/         # Casos de uso y lógica de negocio
-├── lib/                  # Adaptadores (Prisma Client, Configuraciones)
-└── middleware.ts         # Protección de rutas mediante interceptor JWT
-
-
----
-
-## 🔌 Referencia de la API REST
-
-| Método | Endpoint                 | Descripción                           | Requisito Auth    |
-| :---   | :---                     | :---                                  | :---              |
-|  POST  |  /api/auth/login         | Autenticación y set-cookie JWT        | Público           |
-|  GET   |  /api/clientes           | Lista paginada de clientes            | JWT               |
-|  POST  |  /api/clientes           | Registro transaccional de cliente     | JWT               |
-|  GET   |  /api/clientes/[id]      | Detalle extendido (Maestro-Detalle)   | JWT               |
-|  GET   |  /api/clientes/export    | Generación de reporte CSV             | JWT               |
-
----
-
-## 💻 Stack Tecnológico
-
-| Capa          | Tecnología                                |
-| :---          | :---                                      |
-| Framework     | Next.js 16 (App Router) & React           |
-| Estilos       | Tailwind CSS (Arquitectura Utility-First) |
-| ORM           | Prisma v5 (Type-safe Queries)             |
-| Base de Datos | PostgreSQL 15                             |
-| Contenedores  | Docker & Docker Compose                   |
-
----
-
-## 🛠️ Desarrollo Local (Modo Híbrido)
-
-Si deseas iterar rápidamente en la UI sin reconstruir contenedores:
-
-# 1. Instalar dependencias
-npm install
-
-# 2. Levantar solo la BD
-docker-compose up -d postgres
-
-# 4. Preparar la base de datos
-npx prisma migrate dev && npx prisma db seed
-
-# 5. Iniciar servidor de desarrollo
-npm run dev
-
----
-
+*   **Tipado Riguroso:** Implementación estricta de TypeScript; se ha erradicado el uso de variables tipo `any`.
+*   **Limpieza de CSS:** Uso exclusivo del motor `@tailwindcss/postcss` en su versión 4, consolidando variables globales nativas y removiendo archivos de configuración heredados de la versión 3.
+*   **Seguridad:** Las peticiones desde el cliente hacia la API están securizadas y validadas. La exportación gestiona correctamente las cabeceras HTTP de respuesta y sanitiza la salida de los archivos.

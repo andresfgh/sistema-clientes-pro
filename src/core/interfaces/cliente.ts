@@ -17,11 +17,21 @@ export interface ClientePayload {
     documentos: DocumentoDTO[];
 }
 
+export interface AuditoriaDTO {
+    id: string;
+    accion: string;
+    detalles: any;
+    usuarioId: string;
+    fechaHora: string;
+}
+
 // Interfaz para la lectura de datos provenientes de la API 
 export interface ClienteResponse extends ClientePayload {
     id: string;
+    estado: boolean;
     createdAt: string;
     updatedAt: string;
     direcciones: (DireccionDTO & { id: string })[];
     documentos: (DocumentoDTO & { id: string })[];
+    auditorias?: AuditoriaDTO[];
 }

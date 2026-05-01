@@ -1,6 +1,6 @@
 # Capa 1: Construccion (Builder)
 FROM node:20-alpine AS builder
-# Parche de infraestructura: Dependencias de SO para el motor de Prisma
+# Dependencias de SO para el motor de Prisma
 RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app

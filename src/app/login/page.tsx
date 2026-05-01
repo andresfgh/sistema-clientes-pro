@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Componente de presentacion y logica para la autenticacion de usuarios
 export default function LoginPage() {
     const router = useRouter();
     const [error, setError] = useState<string | null>(null);
@@ -19,7 +18,7 @@ export default function LoginPage() {
         const password = formData.get('password');
 
         try {
-            // La peticion se envia a nuestra propia ruta de API
+            // Autentica al usuario contra el endpoint local
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -27,8 +26,6 @@ export default function LoginPage() {
             });
 
             if (res.ok) {
-                // La cookie HttpOnly se establece automaticamente en el navegador.
-                // Redireccion forzada al area segura.
                 router.push('/dashboard');
                 router.refresh(); 
             } else {
@@ -44,16 +41,16 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="flex min-h-screen items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+        <main className="flex min-h-screen items-center justify-center p-4 bg-bg-main">
+            <div className="w-full max-w-md bg-white rounded-xl shadow-md p-8 border border-slate-100">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800">Sistema de Clientes</h1>
-                    <p className="text-gray-500 text-sm mt-2">Ingrese sus credenciales de acceso</p>
+                    <h1 className="text-2xl font-bold text-slate-800">Sistema de Clientes</h1>
+                    <p className="text-slate-500 text-sm mt-2">Ingrese sus credenciales de acceso</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="username">
+                        <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="username">
                             Usuario
                         </label>
                         <input
@@ -61,14 +58,14 @@ export default function LoginPage() {
                             name="username"
                             type="text"
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-black"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-brand focus:border-primary-brand outline-none transition-shadow text-slate-900"
                             placeholder="Ej. admin"
                             autoComplete="off"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+                        <label className="block text-sm font-medium text-slate-700 mb-2" htmlFor="password">
                             Contraseña
                         </label>
                         <input
@@ -76,14 +73,13 @@ export default function LoginPage() {
                             name="password"
                             type="password"
                             required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-black"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-brand focus:border-primary-brand outline-none transition-shadow text-slate-900"
                             placeholder="••••••••"
                         />
                     </div>
 
-                    {/* Bloque de renderizado condicional para manejo de errores */}
                     {error && (
-                        <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+                        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
                             {error}
                         </div>
                     )}
@@ -91,7 +87,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                        className="w-full bg-primary-brand text-white font-medium py-3 px-4 rounded-lg hover:bg-secondary-brand focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:opacity-50 transition-all duration-200 shadow-sm"
                     >
                         {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
                     </button>

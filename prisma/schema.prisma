@@ -27,7 +27,7 @@ model Cliente {
   direcciones      Direccion[]
   documentos       Documento[]
   auditorias       Auditoria[]
-
+  estado          Boolean   @default(true) // true = Activo, false = Eliminado 
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 }
