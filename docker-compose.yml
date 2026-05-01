@@ -1,22 +1,41 @@
-# docker-compose.yml
-version: '3.8'
+
 
 services:
-  db:
-    # Uso de la version alpine para minimizar el peso de la imagen
+  postgres:
     image: postgres:15-alpine
-    container_name: postgres_clientes
-    restart: always
+    container_name: db_clientes
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: rootpassword
-      POSTGRES_DB: db_clientes
+      # la BD nace con las variables del env local
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      # Mapeo del puerto interno del contenedor al puerto local de la maquina
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      # Persistencia de datos para que la informacion no se pierda al apagar el contenedor
-      - pg_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Configuracion para la aplicacion Next.js
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_clientes
+    ports:
+      - "3000:3000"
+    environment:
+      # Inyectamos las variables
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - postgres
+    networks:
+      - app-network
 
 volumes:
-  pg_data:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge

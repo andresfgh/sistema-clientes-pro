@@ -1,0 +1,62 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Control de acceso e identidad
+model Usuario {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// Entidad central de negocio
+model Cliente {
+  id               String      @id @default(uuid())
+  nombres          String
+  apellidos        String
+  fechaNacimiento  DateTime
+
+  direcciones      Direccion[]
+  documentos       Documento[]
+  auditorias       Auditoria[]
+  estado          Boolean   @default(true) // true = Activo, false = Eliminado 
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+// Normalizacion de direcciones (Relacion 1:N)
+model Direccion {
+  id           String  @id @default(uuid())
+  clienteId    String
+  cliente      Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  direccion    String
+  ciudad       String
+}
+
+// Normalizacion de documentos de identidad (Relacion 1:N)
+model Documento {
+  id            String  @id @default(uuid())
+  clienteId     String
+  cliente       Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipoDocumento String  
+  numero        String
+}
+
+// Historial inmutable para trazabilidad de mutaciones
+model Auditoria {
+  id          String   @id @default(uuid())
+  clienteId   String
+  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  accion      String   
+  detalles    Json     
+  usuarioId   String   
+  fechaHora   DateTime @default(now())
+}
