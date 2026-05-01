@@ -49,10 +49,8 @@ El portal administrativo estará disponible en su navegador en:
 **[http://localhost:3000](http://localhost:3000)**
 
 *(Credenciales provistas por la administración para pruebas de entorno local).*
-
-| Campo         |  Valor          |
-| Usuario       |  admin          |
-| Contraseña    |  adminpassword  |
+Usuario:      admin
+Contraseña:   adminpassword  
 
 ---
 
