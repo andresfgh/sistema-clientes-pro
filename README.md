@@ -34,7 +34,7 @@ El sistema ha sido "dockerizado" utilizando imágenes ligeras de Alpine Linux (`
 ### 1. Variables de Entorno
 Asegúrese de contar con un archivo `.env` en la raíz del proyecto. Puede usar el archivo de ejemplo proporcionado:
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 ### 2. Ejecutar Contenedores
@@ -42,7 +42,10 @@ Para compilar la aplicación y levantar la base de datos de PostgreSQL, ejecute 
 ```bash
 docker-compose up -d --build
 ```
-*Este comando instalará las dependencias, ejecutará automáticamente las migraciones de Prisma y levantará la plataforma de forma local.*
+*Este comando instalará las dependencias, ejecutará automáticamente las migraciones de Prisma, correrá el `seed` (datos iniciales) y levantará la plataforma de forma local.*
+
+> **Nota sobre el primer arranque:** La aplicación utiliza un sistema de `healthcheck` para asegurar que la base de datos esté lista antes de iniciar. Puede que el contenedor `app_clientes` tarde unos segundos extra en pasar a estado *Started* mientras PostgreSQL termina su inicialización interna.
+
 
 ### 3. Acceso a la Plataforma
 El portal administrativo estará disponible en su navegador en:
@@ -51,6 +54,12 @@ El portal administrativo estará disponible en su navegador en:
 *(Credenciales provistas por la administración para pruebas de entorno local).*
 Usuario:      admin
 Contraseña:   adminpassword  
+
+### 4. Conexión a Base de Datos (Opcional)
+Si desea conectarse a la base de datos desde una herramienta externa (ej. DBeaver, TablePlus), utilice los siguientes parámetros:
+- **Host:** localhost
+- **Puerto:** 5433 (mapeado desde el 5432 interno)
+- **Usuario/Password/DB:** Revisar su archivo `.env` (por defecto `root/root/db_clientes`)
 
 ---
 
