@@ -50,6 +50,10 @@ El portal administrativo estará disponible en su navegador en:
 
 *(Credenciales provistas por la administración para pruebas de entorno local).*
 
+| Campo         |  Valor          |
+| Usuario       |  admin          |
+| Contraseña    |  adminpassword  |
+
 ---
 
 ## 🏗️ Estructura del Código
