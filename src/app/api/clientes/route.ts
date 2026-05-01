@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server';
 import { ClienteService } from '@/core/services/cliente.service';
+import { applyDataQualityGuard } from './guard';
 
 // Endpoint para el registro inicial de clientes
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        let body = await request.json();
+        
+        try {
+            body = await applyDataQualityGuard(body);
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message === 'GIBBERISH_DETECTED') {
+                return NextResponse.json({ error: 'El registro no cumple con las políticas de integridad de datos' }, { status: 400 });
+            }
+            throw error;
+        }
+
         const nuevoCliente = await ClienteService.create(body);
 
         // Retorno de codigo de estado 201 (Created) siguiendo el estandar REST

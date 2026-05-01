@@ -1,86 +1,117 @@
-# Sistema Administrativo de Clientes
+# Sistema de Gestión de Clientes Pro (SV 2026)
 
-Este repositorio contiene el código fuente del Sistema Integrado de Gestión de Clientes, una plataforma de *Backoffice* desarrollada bajo los principios de **Clean Architecture**. La aplicación ha sido diseñada con un enfoque estrictamente funcional, priorizando la densidad de datos, la velocidad operativa y la trazabilidad, características esenciales para entornos de gestión corporativa tipo *AdminLTE*.
+> **Documentación Técnica y Arquitectura de Soluciones**
 
----
-
-## 🚀 Características Principales
-
-*   **Arquitectura Transaccional Robusta:** Implementación de un patrón de Repositorio/Servicio. Las operaciones maestras y de detalle (creación y edición de Clientes, Direcciones y Documentos) son completamente atómicas bajo transacciones de base de datos.
-*   **Interfaz de Usuario Ultra-Compacta:** Interfaz diseñada sin elementos distractivos, maximizando el espacio para los datos. Estilo corporativo "plano" sin sombras, usando Tailwind CSS v4.
-*   **Auditoría y Trazabilidad (Timeline):** Todo cambio (`CREATE`, `UPDATE`, `DELETE`, `REACTIVATE`) queda registrado de manera inmutable con estampa de tiempo y el identificador del usuario que lo realizó.
-*   **Gestión de Estado (Soft Delete):** Eliminación lógica de los registros en la base de datos para preservar la integridad referencial en todo momento.
-*   **Exportación Dinámica de CSV:** 
-    *   *Masiva:* Descarga de todo el listado de clientes activos con nombre autogenerado (`reporte_clientes_general_YYYY-MM-DD.csv`).
-    *   *Individual:* Descarga específica sanitizada (ej. `cliente_nombres_apellidos_id.csv`). Las múltiples direcciones y documentos se concatenan automáticamente en el CSV.
+Un sistema de gestión de clientes (SaaS) diseñado bajo los principios de **Gestión de Riesgos de Información** e **Integridad Estadística**. El proyecto abandona la captura de datos en texto plano en favor de un ecosistema fuertemente tipado, orquestado y resiliente, preparado nativamente para la transición administrativa territorial de El Salvador.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🏗️ 1. Arquitectura de Resiliencia
 
-El proyecto está construido utilizando tecnologías modernas pero estabilizadas para garantizar mantenibilidad a largo plazo:
+El sistema opera sobre un stack tecnológico moderno, garantizando alta disponibilidad y consistencia desde el momento del despliegue:
 
-*   **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS v4 (Nativo usando `@import 'tailwindcss'`).
-*   **Backend API:** Route Handlers de Next.js, conectando la vista con los Controladores/Servicios.
-*   **Capa de Datos:** Prisma ORM v5, PostgreSQL 15.
-*   **Infraestructura:** Docker y Docker Compose para un ambiente agnóstico y de rápida integración.
+* **Core Framework:** Next.js (App Router) y React.
+* **Capa de Persistencia:** PostgreSQL 15.
+* **ORM:** Prisma (Type-Safe Database Access).
+* **Orquestación:** Docker & Docker Compose.
+
+**Resiliencia mediante Healthchecks Estrictos:**  
+Para evitar *race conditions* (como intentar migrar una base de datos que aún no ha iniciado), el contenedor de la aplicación (`app_clientes`) cuenta con un bloqueo por dependencia lógica:
+```yaml
+depends_on:
+  postgres:
+    condition: service_healthy
+```
+Esto garantiza que la aplicación no inicie, ni ejecute migraciones o *seeding*, hasta que PostgreSQL responda afirmativamente a la prueba interna `pg_isready`.
 
 ---
 
-## 📦 Instrucciones de Despliegue (Docker)
+## 🇸🇻 2. Geopolítica SV 2026 (Transición Administrativa)
 
-El sistema ha sido "dockerizado" utilizando imágenes ligeras de Alpine Linux (`node:20-alpine`) a través de un *Multi-stage build* para minimizar el peso del contenedor de producción.
+La plataforma integra de forma nativa la nueva división política de El Salvador. Se reemplazó la entrada manual de texto por una **estructura relacional estricta**, asegurando la integridad estadística para cruces de datos y reportería:
 
-### 1. Variables de Entorno
-Asegúrese de contar con un archivo `.env` en la raíz del proyecto. Puede usar el archivo de ejemplo proporcionado:
-```bash
-cp env.example .env
+| Nivel Jerárquico   | Cantidad | Implementación Arquitectónica                          |
+| :---               | :---:    | :---                                                 |
+| **Departamentos**  | 14       | Entidades inmutables precargadas en el *Seed*.         |
+| **Municipios**     | 44       | Relación 1:N con los departamentos.                    |
+| **Distritos**      | 262      | Relación 1:N con los municipios.                       |
+
+**Ventaja Arquitectónica:** Al basar las ubicaciones en `UUIDs` referenciales en lugar de strings, el sistema previene la fragmentación del dato ("San Salvador" vs "Sn Salvador"), haciendo que las agrupaciones métricas sean 100% exactas.
+
+---
+
+## 🛡️ 3. Data Quality Guard (Asistente de Integridad)
+
+Para garantizar la pureza del *Data Lake* relacional, se implementó un middleware inyectado en las rutas de creación y actualización (`src/app/api/clientes/guard.ts`). Este guardián procesa el *payload* antes de interactuar con Prisma:
+
+### Flujo de Vida del Dato
+
+```mermaid
+graph TD
+    A[Formulario UI] -->|Payload JSON| B(Data Quality Guard)
+    B --> C{Filtro de Entropía}
+    C -->|Rechazado| D[HTTP 400 Bad Request]
+    C -->|Aprobado| E[Normalización Bancaria]
+    E --> F[Fuzzy Matching Levenshtein]
+    F -->|Match >= 70%| G[Auto-Asignación Distrito]
+    F -->|Match < 70%| H[Ubicación Personalizada]
+    G --> I[Prisma ORM]
+    H --> I
+    I --> J[(PostgreSQL)]
 ```
 
-### 2. Ejecutar Contenedores
-Para compilar la aplicación y levantar la base de datos de PostgreSQL, ejecute en su terminal:
+### Mecanismos de Sanitización
+
+1. **Normalización Bancaria:**  
+   Transformación automática de todos los campos de texto a `MAYÚSCULAS` y eliminación de espacios redundantes. Garantiza un estándar visual institucional.
+2. **Mitigación de Ruido (Entropía):**  
+   Previene ingresos accidentales extremos (ej. `"asdfgh"`, pulsaciones del gato en el teclado). El algoritmo evalúa la existencia de vocales y bloquea secuencias de *5 o más consonantes continuas*. Se ajustó cuidadosamente para permitir nombres o palabras muy cortas sin afectar la flexibilidad del usuario.
+3. **Fuzzy Matching Asistido (Levenshtein):**  
+   Actúa como corrector ortográfico. Si un usuario envía un nombre de ciudad, el sistema calcula la Distancia de Levenshtein contra el catálogo en memoria. Si la similitud supera el umbral del **70%**, el sistema auto-corrige la cadena y la enlaza al `distritoId` oficial. De lo contrario, respeta el dato y levanta el *flag* `es_ubicacion_personalizada`.
+
+---
+
+## 📊 4. Motor de Reportería (CSV)
+
+La exportación de datos (`src/app/api/clientes/export/route.ts` & `ClienteService.exportToCSV`) implementa una técnica de **Deep Relational Flattening**.
+
+* **Despliegue de Jerarquía:** Prisma ejecuta una consulta profunda (`include`) que extrae la cadena completa: `Direcciones -> Distrito -> Municipio -> Departamento`.
+* **Transformación Tabular:** Los objetos anidados en JSON se aplanan en columnas independientes de Excel (`DEPARTAMENTO`, `MUNICIPIO_2026`, `DISTRITO_2026`, `REF_PRIMARIA`, etc.).
+* **Legibilidad:** Asegura que los administradores lean nombres de ciudades en mayúsculas en el CSV en lugar de identificadores alfanuméricos internos, simplificando las auditorías manuales.
+
+---
+
+## 🚀 5. Guía de Despliegue 360°
+
+El sistema requiere cero configuración manual gracias a su arquitectura por contenedores.
+
+### Pre-requisitos
+Asegúrate de contar con el archivo `.env` en la raíz (puedes basarte en `env.example`).
+```env
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=db_clientes
+DATABASE_URL="postgresql://root:root@db_clientes:5432/db_clientes?schema=public"
+JWT_SECRET=tu_secreto_seguro
+```
+
+### Paso 1: Inicialización
+Ejecuta el siguiente comando para orquestar la infraestructura. Esto levantará la base de datos, ejecutará migraciones, insertará los catálogos SV 2026 e iniciará la aplicación web y el túnel Zero Trust:
+
 ```bash
 docker-compose up -d --build
 ```
-*Este comando instalará las dependencias, ejecutará automáticamente las migraciones de Prisma, correrá el `seed` (datos iniciales) y levantará la plataforma de forma local.*
 
-> **Nota sobre el primer arranque:** La aplicación utiliza un sistema de `healthcheck` para asegurar que la base de datos esté lista antes de iniciar. Puede que el contenedor `app_clientes` tarde unos segundos extra en pasar a estado *Started* mientras PostgreSQL termina su inicialización interna.
+### Paso 2: Extraer la URL de Acceso
+El sistema se auto-expone a internet de forma segura mediante Cloudflare. Extrae la URL dinámica inspeccionando los logs del túnel:
 
-
-### 3. Acceso a la Plataforma
-El portal administrativo estará disponible en su navegador en:
-**[http://localhost:3000](http://localhost:3000)**
-
-*(Credenciales provistas por la administración para pruebas de entorno local).*
-Usuario:      admin
-Contraseña:   adminpassword  
-
-### 4. Conexión a Base de Datos (Opcional)
-Si desea conectarse a la base de datos desde una herramienta externa (ej. DBeaver, TablePlus), utilice los siguientes parámetros:
-- **Host:** localhost
-- **Puerto:** 5433 (mapeado desde el 5432 interno)
-- **Usuario/Password/DB:** Revisar su archivo `.env` (por defecto `root/root/db_clientes`)
-
----
-
-## 🏗️ Estructura del Código
-
-El proyecto está organizado aislando la lógica de negocio de la capa de presentación:
-
-```text
-/src
-├── app/               # Enrutamiento UI (Next.js App Router) y Endpoints REST (/api)
-├── components/        # Componentes de presentación (ClientForm, UI compartida)
-├── core/
-│   ├── interfaces/    # Definiciones estables (DTOs, Types)
-│   └── services/      # Casos de uso y lógica transaccional (ClienteService, AuditService)
-└── lib/               # Utilidades de infraestructura (Instancia de Base de Datos Prisma)
+```bash
+docker logs tunnel_clientes
 ```
+*Busca la línea que contiene `https://*.trycloudflare.com`.*
 
----
+### Paso 3: Acceso al Sistema
+Ingresa al enlace generado y autentícate con las credenciales maestras aprovisionadas por el *seed*:
 
-## 📝 Estándares de Desarrollo Adoptados
-
-*   **Tipado Riguroso:** Implementación estricta de TypeScript; se ha erradicado el uso de variables tipo `any`.
-*   **Limpieza de CSS:** Uso exclusivo del motor `@tailwindcss/postcss` en su versión 4, consolidando variables globales nativas y removiendo archivos de configuración heredados de la versión 3.
-*   **Seguridad:** Las peticiones desde el cliente hacia la API están securizadas y validadas. La exportación gestiona correctamente las cabeceras HTTP de respuesta y sanitiza la salida de los archivos.
+* **Usuario Administrativo:** `admin`
+* **Contraseña:** `adminpassword`

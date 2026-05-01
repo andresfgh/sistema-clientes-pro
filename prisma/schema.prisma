@@ -19,26 +19,61 @@ model Usuario {
 
 // Entidad central de negocio
 model Cliente {
-  id               String      @id @default(uuid())
-  nombres          String
-  apellidos        String
-  fechaNacimiento  DateTime
+  id              String   @id @default(uuid())
+  nombres         String
+  apellidos       String
+  fechaNacimiento DateTime
 
-  direcciones      Direccion[]
-  documentos       Documento[]
-  auditorias       Auditoria[]
-  estado          Boolean   @default(true) // true = Activo, false = Eliminado 
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  direcciones Direccion[]
+  documentos  Documento[]
+  auditorias  Auditoria[]
+  estado      Boolean     @default(true) // true = Activo, false = Eliminado 
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// Modelo Geográfico (División Política El Salvador 2026)
+model Departamento {
+  id         String      @id @default(uuid())
+  nombre     String      @unique
+  municipios Municipio[]
+}
+
+model Municipio {
+  id             String       @id @default(uuid())
+  nombre         String
+  departamentoId String
+  departamento   Departamento @relation(fields: [departamentoId], references: [id], onDelete: Cascade)
+  distritos      Distrito[]
+
+  @@unique([nombre, departamentoId])
+}
+
+model Distrito {
+  id          String      @id @default(uuid())
+  nombre      String
+  municipioId String
+  municipio   Municipio   @relation(fields: [municipioId], references: [id], onDelete: Cascade)
+  direcciones Direccion[]
+
+  @@unique([nombre, municipioId])
 }
 
 // Normalizacion de direcciones (Relacion 1:N)
 model Direccion {
-  id           String  @id @default(uuid())
-  clienteId    String
-  cliente      Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  direccion    String
-  ciudad       String
+  id        String  @id @default(uuid())
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  direccion String
+  ciudad    String
+
+  // Extension de Direcciones (División SV 2026)
+  distritoId                 String?
+  distrito                   Distrito? @relation(fields: [distritoId], references: [id])
+  referenciaPrimaria         String? // Colonia/Residencial
+  referenciaEspecifica       String? // Pasaje/Casa
+  puntoReferencia            String?
+  es_ubicacion_personalizada Boolean   @default(false)
 }
 
 // Normalizacion de documentos de identidad (Relacion 1:N)
@@ -46,17 +81,17 @@ model Documento {
   id            String  @id @default(uuid())
   clienteId     String
   cliente       Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  tipoDocumento String  
+  tipoDocumento String
   numero        String
 }
 
 // Historial inmutable para trazabilidad de mutaciones
 model Auditoria {
-  id          String   @id @default(uuid())
-  clienteId   String
-  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  accion      String   
-  detalles    Json     
-  usuarioId   String   
-  fechaHora   DateTime @default(now())
+  id        String   @id @default(uuid())
+  clienteId String
+  cliente   Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  accion    String
+  detalles  Json
+  usuarioId String
+  fechaHora DateTime @default(now())
 }
