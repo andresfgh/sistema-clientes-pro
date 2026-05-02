@@ -6,12 +6,12 @@ const prisma = new PrismaClient();
 async function main() {
     // Definicion de credenciales base para el entorno de evaluacion
     const username = 'admin';
-    const rawPassword = 'adminpassword'; 
+    const rawPassword = 'adminpassword';
     const passwordHash = await bcrypt.hash(rawPassword, 10);
 
     const usuario = await prisma.usuario.upsert({
         where: { username },
-        update: {}, 
+        update: {},
         create: { username, passwordHash },
     });
 
@@ -387,6 +387,77 @@ async function main() {
         }
     }
     console.log(`[SEED_SUCCESS] Distritos sincronizados.`);
+
+    // Agregar clientes de ejemplo con datos completos (direcciones y documentos)
+    const distritosEjemplo = await prisma.distrito.findMany({ take: 2 });
+    const distrito1 = distritosEjemplo[0]?.id;
+    const distrito2 = distritosEjemplo[1]?.id;
+
+    const cliente1 = await prisma.cliente.create({
+        data: {
+            nombres: "Juan Carlos",
+            apellidos: "Pérez Gómez",
+            fechaNacimiento: new Date("1990-05-15"),
+            estado: true, // Activo
+            direcciones: {
+                create: [
+                    {
+                        direccion: "Calle Principal",
+                        ciudad: "San Salvador",
+                        distritoId: distrito1,
+                        referenciaPrimaria: "Colonia Escalón",
+                        referenciaEspecifica: "Casa 12",
+                        puntoReferencia: "Cerca del parque",
+                        es_ubicacion_personalizada: false
+                    }
+                ]
+            },
+            documentos: {
+                create: [
+                    {
+                        tipoDocumento: "DUI",
+                        numero: "012345678"
+                    }
+                ]
+            }
+        }
+    });
+
+    const cliente2 = await prisma.cliente.create({
+        data: {
+            nombres: "María Elena",
+            apellidos: "López Silva",
+            fechaNacimiento: new Date("1985-08-22"),
+            estado: false, // Inactivo
+            direcciones: {
+                create: [
+                    {
+                        direccion: "Avenida Los Cedros",
+                        ciudad: "Santa Tecla",
+                        distritoId: distrito2,
+                        referenciaPrimaria: "Residencial Los Cipreses",
+                        referenciaEspecifica: "Polígono A, Lote 5",
+                        puntoReferencia: "Frente al supermercado",
+                        es_ubicacion_personalizada: false
+                    }
+                ]
+            },
+            documentos: {
+                create: [
+                    {
+                        tipoDocumento: "DUI",
+                        numero: "087654321"
+                    },
+                    {
+                        tipoDocumento: "NIT",
+                        numero: "06142208851021"
+                    }
+                ]
+            }
+        }
+    });
+
+    console.log(`[SEED_SUCCESS] Clientes de ejemplo insertados: ${cliente1.nombres} (Activo) y ${cliente2.nombres} (Inactivo).`);
 }
 
 main()
