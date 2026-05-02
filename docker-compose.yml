@@ -39,6 +39,16 @@ services:
     networks:
       - app-network
 
+  # Túnel Cloudflare para exponer la aplicación de forma segura
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: tunnel_clientes
+    command: tunnel --url http://app_clientes:3000
+    depends_on:
+      - web
+    networks:
+      - app-network
+
 volumes:
   pgdata:
 

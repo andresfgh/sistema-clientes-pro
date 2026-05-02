@@ -2,6 +2,13 @@
 export interface DireccionDTO {
     direccion: string;
     ciudad: string;
+    distritoId?: string;
+    departamentoId?: string; // Auxiliar para UI
+    municipioId?: string;    // Auxiliar para UI
+    referenciaPrimaria?: string;
+    referenciaEspecifica?: string;
+    puntoReferencia?: string;
+    es_ubicacion_personalizada?: boolean;
 }
 
 export interface DocumentoDTO {

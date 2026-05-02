@@ -6,24 +6,460 @@ const prisma = new PrismaClient();
 async function main() {
     // Definicion de credenciales base para el entorno de evaluacion
     const username = 'admin';
-    const rawPassword = 'adminpassword'; 
-    // Generacion del hash con un factor de costo estandar (10 rondas)
+    const rawPassword = 'adminpassword';
     const passwordHash = await bcrypt.hash(rawPassword, 10);
 
-    // Operacion idempotente: Inserta el registro solo si no existe
     const usuario = await prisma.usuario.upsert({
         where: { username },
-        update: {}, // Si existe, no realiza ninguna accion
-        create: {
-            username,
-            passwordHash,
-        },
+        update: {},
+        create: { username, passwordHash },
     });
 
     console.log(`[SEED_SUCCESS] Usuario maestro inicializado. Username: ${usuario.username}`);
+
+    // Inserción de División Política SV 2026 (14 Departamentos, 44 Municipios, 262 Distritos)
+    const departamentos = [
+        { nombre: "Ahuachapán" },
+        { nombre: "Santa Ana" },
+        { nombre: "Sonsonate" },
+        { nombre: "Chalatenango" },
+        { nombre: "La Libertad" },
+        { nombre: "San Salvador" },
+        { nombre: "Cuscatlán" },
+        { nombre: "La Paz" },
+        { nombre: "Cabañas" },
+        { nombre: "San Vicente" },
+        { nombre: "Usulután" },
+        { nombre: "San Miguel" },
+        { nombre: "Morazán" },
+        { nombre: "La Unión" },
+    ];
+
+    for (const d of departamentos) {
+        await prisma.departamento.upsert({
+            where: { nombre: d.nombre },
+            update: {},
+            create: { nombre: d.nombre }
+        });
+    }
+    console.log(`[SEED_SUCCESS] Departamentos sincronizados.`);
+
+    const dbDeptos = await prisma.departamento.findMany();
+    const deptoMap = new Map(dbDeptos.map(d => [d.nombre, d.id]));
+
+    const municipiosData = [
+        { nombre: "Ahuachapán Norte", depto: "Ahuachapán" },
+        { nombre: "Ahuachapán Centro", depto: "Ahuachapán" },
+        { nombre: "Ahuachapán Sur", depto: "Ahuachapán" },
+        { nombre: "Santa Ana Norte", depto: "Santa Ana" },
+        { nombre: "Santa Ana Centro", depto: "Santa Ana" },
+        { nombre: "Santa Ana Este", depto: "Santa Ana" },
+        { nombre: "Santa Ana Oeste", depto: "Santa Ana" },
+        { nombre: "Sonsonate Norte", depto: "Sonsonate" },
+        { nombre: "Sonsonate Centro", depto: "Sonsonate" },
+        { nombre: "Sonsonate Este", depto: "Sonsonate" },
+        { nombre: "Sonsonate Oeste", depto: "Sonsonate" },
+        { nombre: "Chalatenango Norte", depto: "Chalatenango" },
+        { nombre: "Chalatenango Centro", depto: "Chalatenango" },
+        { nombre: "Chalatenango Sur", depto: "Chalatenango" },
+        { nombre: "La Libertad Norte", depto: "La Libertad" },
+        { nombre: "La Libertad Centro", depto: "La Libertad" },
+        { nombre: "La Libertad Oeste", depto: "La Libertad" },
+        { nombre: "La Libertad Este", depto: "La Libertad" },
+        { nombre: "La Libertad Costa", depto: "La Libertad" },
+        { nombre: "La Libertad Sur", depto: "La Libertad" },
+        { nombre: "San Salvador Norte", depto: "San Salvador" },
+        { nombre: "San Salvador Oeste", depto: "San Salvador" },
+        { nombre: "San Salvador Este", depto: "San Salvador" },
+        { nombre: "San Salvador Centro", depto: "San Salvador" },
+        { nombre: "San Salvador Sur", depto: "San Salvador" },
+        { nombre: "Cuscatlán Norte", depto: "Cuscatlán" },
+        { nombre: "Cuscatlán Sur", depto: "Cuscatlán" },
+        { nombre: "La Paz Oeste", depto: "La Paz" },
+        { nombre: "La Paz Centro", depto: "La Paz" },
+        { nombre: "La Paz Este", depto: "La Paz" },
+        { nombre: "Cabañas Este", depto: "Cabañas" },
+        { nombre: "Cabañas Oeste", depto: "Cabañas" },
+        { nombre: "San Vicente Norte", depto: "San Vicente" },
+        { nombre: "San Vicente Sur", depto: "San Vicente" },
+        { nombre: "Usulután Norte", depto: "Usulután" },
+        { nombre: "Usulután Este", depto: "Usulután" },
+        { nombre: "Usulután Oeste", depto: "Usulután" },
+        { nombre: "San Miguel Norte", depto: "San Miguel" },
+        { nombre: "San Miguel Centro", depto: "San Miguel" },
+        { nombre: "San Miguel Oeste", depto: "San Miguel" },
+        { nombre: "Morazán Norte", depto: "Morazán" },
+        { nombre: "Morazán Sur", depto: "Morazán" },
+        { nombre: "La Unión Norte", depto: "La Unión" },
+        { nombre: "La Unión Sur", depto: "La Unión" },
+    ];
+
+    for (const m of municipiosData) {
+        const departamentoId = deptoMap.get(m.depto);
+        if (departamentoId) {
+            await prisma.municipio.upsert({
+                where: { nombre_departamentoId: { nombre: m.nombre, departamentoId } },
+                update: {},
+                create: { nombre: m.nombre, departamentoId }
+            });
+        }
+    }
+    console.log(`[SEED_SUCCESS] Municipios sincronizados.`);
+
+    const dbMunis = await prisma.municipio.findMany();
+    const muniMap = new Map(dbMunis.map(m => [m.nombre, m.id]));
+
+    const distritosData = [
+        { nombre: "Atiquizaya", muni: "Ahuachapán Norte" },
+        { nombre: "El Refugio", muni: "Ahuachapán Norte" },
+        { nombre: "San Lorenzo", muni: "Ahuachapán Norte" },
+        { nombre: "Turín", muni: "Ahuachapán Norte" },
+        { nombre: "Ahuachapán", muni: "Ahuachapán Centro" },
+        { nombre: "Apaneca", muni: "Ahuachapán Centro" },
+        { nombre: "Concepción de Ataco", muni: "Ahuachapán Centro" },
+        { nombre: "Tacuba", muni: "Ahuachapán Centro" },
+        { nombre: "Guaymango", muni: "Ahuachapán Sur" },
+        { nombre: "Jujutla", muni: "Ahuachapán Sur" },
+        { nombre: "San Francisco Menéndez", muni: "Ahuachapán Sur" },
+        { nombre: "San Pedro Puxtla", muni: "Ahuachapán Sur" },
+        { nombre: "Masahuat", muni: "Santa Ana Norte" },
+        { nombre: "Metapán", muni: "Santa Ana Norte" },
+        { nombre: "Santa Rosa Guachipilín", muni: "Santa Ana Norte" },
+        { nombre: "Texistepeque", muni: "Santa Ana Norte" },
+        { nombre: "Santa Ana", muni: "Santa Ana Centro" },
+        { nombre: "Coatepeque", muni: "Santa Ana Este" },
+        { nombre: "El Congo", muni: "Santa Ana Este" },
+        { nombre: "Candelaria de la Frontera", muni: "Santa Ana Oeste" },
+        { nombre: "Chalchuapa", muni: "Santa Ana Oeste" },
+        { nombre: "El Porvenir", muni: "Santa Ana Oeste" },
+        { nombre: "San Antonio Pajonal", muni: "Santa Ana Oeste" },
+        { nombre: "San Sebastián Salitrillo", muni: "Santa Ana Oeste" },
+        { nombre: "Santiago de la Frontera", muni: "Santa Ana Oeste" },
+        { nombre: "Juayúa", muni: "Sonsonate Norte" },
+        { nombre: "Nahuizalco", muni: "Sonsonate Norte" },
+        { nombre: "Salcoatitán", muni: "Sonsonate Norte" },
+        { nombre: "Santa Catarina Masahuat", muni: "Sonsonate Norte" },
+        { nombre: "Sonsonate", muni: "Sonsonate Centro" },
+        { nombre: "Sonzacate", muni: "Sonsonate Centro" },
+        { nombre: "Nahulingo", muni: "Sonsonate Centro" },
+        { nombre: "San Antonio del Monte", muni: "Sonsonate Centro" },
+        { nombre: "Santo Domingo de Guzmán", muni: "Sonsonate Centro" },
+        { nombre: "Izalco", muni: "Sonsonate Este" },
+        { nombre: "Armenia", muni: "Sonsonate Este" },
+        { nombre: "Caluco", muni: "Sonsonate Este" },
+        { nombre: "San Julián", muni: "Sonsonate Este" },
+        { nombre: "Cuisnahuat", muni: "Sonsonate Este" },
+        { nombre: "Santa Isabel Ishuatán", muni: "Sonsonate Este" },
+        { nombre: "Acajutla", muni: "Sonsonate Oeste" },
+        { nombre: "Citalá", muni: "Chalatenango Norte" },
+        { nombre: "La Palma", muni: "Chalatenango Norte" },
+        { nombre: "San Ignacio", muni: "Chalatenango Norte" },
+        { nombre: "Agua Caliente", muni: "Chalatenango Centro" },
+        { nombre: "Dulce Nombre de María", muni: "Chalatenango Centro" },
+        { nombre: "El Paraíso", muni: "Chalatenango Centro" },
+        { nombre: "La Reina", muni: "Chalatenango Centro" },
+        { nombre: "Nueva Concepción", muni: "Chalatenango Centro" },
+        { nombre: "San Fernando", muni: "Chalatenango Centro" },
+        { nombre: "San Francisco Morazán", muni: "Chalatenango Centro" },
+        { nombre: "San Rafael", muni: "Chalatenango Centro" },
+        { nombre: "Santa Rita", muni: "Chalatenango Centro" },
+        { nombre: "Tejutla", muni: "Chalatenango Centro" },
+        { nombre: "Arcatao", muni: "Chalatenango Sur" },
+        { nombre: "Azacualpa", muni: "Chalatenango Sur" },
+        { nombre: "Cancasque", muni: "Chalatenango Sur" },
+        { nombre: "Chalatenango", muni: "Chalatenango Sur" },
+        { nombre: "Comalapa", muni: "Chalatenango Sur" },
+        { nombre: "Concepción Quezaltepeque", muni: "Chalatenango Sur" },
+        { nombre: "El Carrizal", muni: "Chalatenango Sur" },
+        { nombre: "La Laguna", muni: "Chalatenango Sur" },
+        { nombre: "Las Vueltas", muni: "Chalatenango Sur" },
+        { nombre: "Nombre de Jesús", muni: "Chalatenango Sur" },
+        { nombre: "Nueva Trinidad", muni: "Chalatenango Sur" },
+        { nombre: "Ojos de Agua", muni: "Chalatenango Sur" },
+        { nombre: "Potonico", muni: "Chalatenango Sur" },
+        { nombre: "San Antonio de la Cruz", muni: "Chalatenango Sur" },
+        { nombre: "San Antonio Los Ranchos", muni: "Chalatenango Sur" },
+        { nombre: "San Francisco Lempa", muni: "Chalatenango Sur" },
+        { nombre: "San Isidro Labrador", muni: "Chalatenango Sur" },
+        { nombre: "San José Cancasque", muni: "Chalatenango Sur" },
+        { nombre: "San Miguel de Mercedes", muni: "Chalatenango Sur" },
+        { nombre: "San José Las Flores", muni: "Chalatenango Sur" },
+        { nombre: "San Luis del Carmen", muni: "Chalatenango Sur" },
+        { nombre: "Quezaltepeque", muni: "La Libertad Norte" },
+        { nombre: "San Matías", muni: "La Libertad Norte" },
+        { nombre: "San Pablo Tacachico", muni: "La Libertad Norte" },
+        { nombre: "San Juan Opico", muni: "La Libertad Centro" },
+        { nombre: "Ciudad Arce", muni: "La Libertad Centro" },
+        { nombre: "Colón", muni: "La Libertad Oeste" },
+        { nombre: "Jayaque", muni: "La Libertad Oeste" },
+        { nombre: "Sacacoyo", muni: "La Libertad Oeste" },
+        { nombre: "Tepecoyo", muni: "La Libertad Oeste" },
+        { nombre: "Talcualuya", muni: "La Libertad Oeste" },
+        { nombre: "Antiguo Cuscatlán", muni: "La Libertad Este" },
+        { nombre: "Huizúcar", muni: "La Libertad Este" },
+        { nombre: "Nuevo Cuscatlán", muni: "La Libertad Este" },
+        { nombre: "San José Villanueva", muni: "La Libertad Este" },
+        { nombre: "Zaragoza", muni: "La Libertad Este" },
+        { nombre: "Chiltiupán", muni: "La Libertad Costa" },
+        { nombre: "Jicalapa", muni: "La Libertad Costa" },
+        { nombre: "La Libertad", muni: "La Libertad Costa" },
+        { nombre: "Tamanique", muni: "La Libertad Costa" },
+        { nombre: "Teotepeque", muni: "La Libertad Costa" },
+        { nombre: "Comasagua", muni: "La Libertad Sur" },
+        { nombre: "Santa Tecla", muni: "La Libertad Sur" },
+        { nombre: "Aguilares", muni: "San Salvador Norte" },
+        { nombre: "El Paisnal", muni: "San Salvador Norte" },
+        { nombre: "Guazapa", muni: "San Salvador Norte" },
+        { nombre: "Apopa", muni: "San Salvador Oeste" },
+        { nombre: "Nejapa", muni: "San Salvador Oeste" },
+        { nombre: "Ilopango", muni: "San Salvador Este" },
+        { nombre: "San Martín", muni: "San Salvador Este" },
+        { nombre: "Soyapango", muni: "San Salvador Este" },
+        { nombre: "Tonacatepeque", muni: "San Salvador Este" },
+        { nombre: "Ayutuxtepeque", muni: "San Salvador Centro" },
+        { nombre: "Mejicanos", muni: "San Salvador Centro" },
+        { nombre: "San Salvador", muni: "San Salvador Centro" },
+        { nombre: "Cuscatancingo", muni: "San Salvador Centro" },
+        { nombre: "Ciudad Delgado", muni: "San Salvador Centro" },
+        { nombre: "Panchimalco", muni: "San Salvador Sur" },
+        { nombre: "Rosario de Mora", muni: "San Salvador Sur" },
+        { nombre: "San Marcos", muni: "San Salvador Sur" },
+        { nombre: "Santo Tomás", muni: "San Salvador Sur" },
+        { nombre: "Santiago Texacuangos", muni: "San Salvador Sur" },
+        { nombre: "Suchitoto", muni: "Cuscatlán Norte" },
+        { nombre: "San José Guayabal", muni: "Cuscatlán Norte" },
+        { nombre: "Oratorio de Concepción", muni: "Cuscatlán Norte" },
+        { nombre: "San Bartolomé Perulapía", muni: "Cuscatlán Norte" },
+        { nombre: "San Pedro Perulapán", muni: "Cuscatlán Norte" },
+        { nombre: "Cojutepeque", muni: "Cuscatlán Sur" },
+        { nombre: "Candelaria", muni: "Cuscatlán Sur" },
+        { nombre: "El Carmen", muni: "Cuscatlán Sur" },
+        { nombre: "El Rosario", muni: "Cuscatlán Sur" },
+        { nombre: "Monte San Juan", muni: "Cuscatlán Sur" },
+        { nombre: "San Cristóbal", muni: "Cuscatlán Sur" },
+        { nombre: "San Rafael Cedros", muni: "Cuscatlán Sur" },
+        { nombre: "San Ramón", muni: "Cuscatlán Sur" },
+        { nombre: "Santa Cruz Analquito", muni: "Cuscatlán Sur" },
+        { nombre: "Santa Cruz Michapa", muni: "Cuscatlán Sur" },
+        { nombre: "Tenancingo", muni: "Cuscatlán Sur" },
+        { nombre: "Cuyultitán", muni: "La Paz Oeste" },
+        { nombre: "Olocuilta", muni: "La Paz Oeste" },
+        { nombre: "San Juan Talpa", muni: "La Paz Oeste" },
+        { nombre: "San Luis Talpa", muni: "La Paz Oeste" },
+        { nombre: "San Pedro Masahuat", muni: "La Paz Oeste" },
+        { nombre: "Tapalhuaca", muni: "La Paz Oeste" },
+        { nombre: "San Francisco Chinameca", muni: "La Paz Oeste" },
+        { nombre: "El Rosario", muni: "La Paz Centro" },
+        { nombre: "Jerusalén", muni: "La Paz Centro" },
+        { nombre: "Mercedes La Ceiba", muni: "La Paz Centro" },
+        { nombre: "Paraíso de Osorio", muni: "La Paz Centro" },
+        { nombre: "San Antonio Masahuat", muni: "La Paz Centro" },
+        { nombre: "San Emigdio", muni: "La Paz Centro" },
+        { nombre: "San Juan Tepezontes", muni: "La Paz Centro" },
+        { nombre: "San Luis La Herradura", muni: "La Paz Centro" },
+        { nombre: "San Miguel Tepezontes", muni: "La Paz Centro" },
+        { nombre: "San Pedro Nonualco", muni: "La Paz Centro" },
+        { nombre: "Santa María Ostuma", muni: "La Paz Centro" },
+        { nombre: "Santiago Nonualco", muni: "La Paz Centro" },
+        { nombre: "San Juan Nonualco", muni: "La Paz Este" },
+        { nombre: "San Rafael Obrajuelo", muni: "La Paz Este" },
+        { nombre: "Zacatecoluca", muni: "La Paz Este" },
+        { nombre: "Sensuntepeque", muni: "Cabañas Este" },
+        { nombre: "Victoria", muni: "Cabañas Este" },
+        { nombre: "Dolores", muni: "Cabañas Este" },
+        { nombre: "Guacotecti", muni: "Cabañas Este" },
+        { nombre: "San Isidro", muni: "Cabañas Este" },
+        { nombre: "Ilobasco", muni: "Cabañas Oeste" },
+        { nombre: "Tejutepeque", muni: "Cabañas Oeste" },
+        { nombre: "Jutiapa", muni: "Cabañas Oeste" },
+        { nombre: "Cinquera", muni: "Cabañas Oeste" },
+        { nombre: "Apastepeque", muni: "San Vicente Norte" },
+        { nombre: "Santa Clara", muni: "San Vicente Norte" },
+        { nombre: "San Ildefonso", muni: "San Vicente Norte" },
+        { nombre: "San Esteban Catarina", muni: "San Vicente Norte" },
+        { nombre: "San Sebastián", muni: "San Vicente Norte" },
+        { nombre: "San Lorenzo", muni: "San Vicente Norte" },
+        { nombre: "Santo Domingo", muni: "San Vicente Norte" },
+        { nombre: "San Vicente", muni: "San Vicente Sur" },
+        { nombre: "Guadalupe", muni: "San Vicente Sur" },
+        { nombre: "Verapaz", muni: "San Vicente Sur" },
+        { nombre: "Tepetitán", muni: "San Vicente Sur" },
+        { nombre: "Tecoluca", muni: "San Vicente Sur" },
+        { nombre: "San Cayetano Istepeque", muni: "San Vicente Sur" },
+        { nombre: "Santiago de María", muni: "Usulután Norte" },
+        { nombre: "Alegría", muni: "Usulután Norte" },
+        { nombre: "Berlín", muni: "Usulután Norte" },
+        { nombre: "Mercedes Umaña", muni: "Usulután Norte" },
+        { nombre: "Jucuapa", muni: "Usulután Norte" },
+        { nombre: "El Triunfo", muni: "Usulután Norte" },
+        { nombre: "Estanzuelas", muni: "Usulután Norte" },
+        { nombre: "San Buenaventura", muni: "Usulután Norte" },
+        { nombre: "Nueva Granada", muni: "Usulután Norte" },
+        { nombre: "Usulután", muni: "Usulután Este" },
+        { nombre: "Jucuarán", muni: "Usulután Este" },
+        { nombre: "San Dionisio", muni: "Usulután Este" },
+        { nombre: "Concepción Batres", muni: "Usulután Este" },
+        { nombre: "Santa María", muni: "Usulután Este" },
+        { nombre: "Ozatlán", muni: "Usulután Este" },
+        { nombre: "Tecapán", muni: "Usulután Este" },
+        { nombre: "Santa Elena", muni: "Usulután Este" },
+        { nombre: "California", muni: "Usulután Este" },
+        { nombre: "Ereguayquín", muni: "Usulután Este" },
+        { nombre: "Jiquilisco", muni: "Usulután Oeste" },
+        { nombre: "Puerto El Triunfo", muni: "Usulután Oeste" },
+        { nombre: "San Agustín", muni: "Usulután Oeste" },
+        { nombre: "San Francisco Javier", muni: "Usulután Oeste" },
+        { nombre: "Ciudad Barrios", muni: "San Miguel Norte" },
+        { nombre: "Sesori", muni: "San Miguel Norte" },
+        { nombre: "Nuevo Edén de San Juan", muni: "San Miguel Norte" },
+        { nombre: "San Gerardo", muni: "San Miguel Norte" },
+        { nombre: "San Luis de la Reina", muni: "San Miguel Norte" },
+        { nombre: "Carolina", muni: "San Miguel Norte" },
+        { nombre: "San Antonio del Mosco", muni: "San Miguel Norte" },
+        { nombre: "Chapeltique", muni: "San Miguel Norte" },
+        { nombre: "San Miguel", muni: "San Miguel Centro" },
+        { nombre: "Comacarán", muni: "San Miguel Centro" },
+        { nombre: "Uluazapa", muni: "San Miguel Centro" },
+        { nombre: "Moncagua", muni: "San Miguel Centro" },
+        { nombre: "Quelepa", muni: "San Miguel Centro" },
+        { nombre: "Chirilagua", muni: "San Miguel Centro" },
+        { nombre: "Chinameca", muni: "San Miguel Oeste" },
+        { nombre: "Nueva Guadalupe", muni: "San Miguel Oeste" },
+        { nombre: "Lolotique", muni: "San Miguel Oeste" },
+        { nombre: "San Jorge", muni: "San Miguel Oeste" },
+        { nombre: "San Rafael Oriente", muni: "San Miguel Oeste" },
+        { nombre: "El Tránsito", muni: "San Miguel Oeste" },
+        { nombre: "Arambala", muni: "Morazán Norte" },
+        { nombre: "Cacaopera", muni: "Morazán Norte" },
+        { nombre: "Corinto", muni: "Morazán Norte" },
+        { nombre: "El Rosario", muni: "Morazán Norte" },
+        { nombre: "Joateca", muni: "Morazán Norte" },
+        { nombre: "Jocoaitique", muni: "Morazán Norte" },
+        { nombre: "Meanguera", muni: "Morazán Norte" },
+        { nombre: "Perquín", muni: "Morazán Norte" },
+        { nombre: "San Fernando", muni: "Morazán Norte" },
+        { nombre: "San Isidro", muni: "Morazán Norte" },
+        { nombre: "Torola", muni: "Morazán Norte" },
+        { nombre: "Chilanga", muni: "Morazán Sur" },
+        { nombre: "Delicias de Concepción", muni: "Morazán Sur" },
+        { nombre: "El Divisadero", muni: "Morazán Sur" },
+        { nombre: "Gualococti", muni: "Morazán Sur" },
+        { nombre: "Guatajiagua", muni: "Morazán Sur" },
+        { nombre: "Jocoro", muni: "Morazán Sur" },
+        { nombre: "Lolotiquillo", muni: "Morazán Sur" },
+        { nombre: "Osicala", muni: "Morazán Sur" },
+        { nombre: "San Carlos", muni: "Morazán Sur" },
+        { nombre: "San Francisco Gotera", muni: "Morazán Sur" },
+        { nombre: "San Simón", muni: "Morazán Sur" },
+        { nombre: "Sensembra", muni: "Morazán Sur" },
+        { nombre: "Sociedad", muni: "Morazán Sur" },
+        { nombre: "Yamabal", muni: "Morazán Sur" },
+        { nombre: "Yoloaiquín", muni: "Morazán Sur" },
+        { nombre: "Anamorós", muni: "La Unión Norte" },
+        { nombre: "Bolívar", muni: "La Unión Norte" },
+        { nombre: "Concepción de Oriente", muni: "La Unión Norte" },
+        { nombre: "El Sauce", muni: "La Unión Norte" },
+        { nombre: "Lislique", muni: "La Unión Norte" },
+        { nombre: "Nueva Esparta", muni: "La Unión Norte" },
+        { nombre: "Pasaquina", muni: "La Unión Norte" },
+        { nombre: "Polorós", muni: "La Unión Norte" },
+        { nombre: "San José", muni: "La Unión Norte" },
+        { nombre: "Santa Rosa de Lima", muni: "La Unión Norte" },
+        { nombre: "Conchagua", muni: "La Unión Sur" },
+        { nombre: "El Carmen", muni: "La Unión Sur" },
+        { nombre: "Intipucá", muni: "La Unión Sur" },
+        { nombre: "La Unión", muni: "La Unión Sur" },
+        { nombre: "Meanguera del Golfo", muni: "La Unión Sur" },
+        { nombre: "San Alejo", muni: "La Unión Sur" },
+        { nombre: "Yucuaiquín", muni: "La Unión Sur" },
+        { nombre: "Yayantique", muni: "La Unión Sur" },
+        { nombre: "San Escapulario", muni: "La Unión Sur" },
+    ];
+
+    for (const d of distritosData) {
+        const municipioId = muniMap.get(d.muni);
+        if (municipioId) {
+            await prisma.distrito.upsert({
+                where: { nombre_municipioId: { nombre: d.nombre, municipioId } },
+                update: {},
+                create: { nombre: d.nombre, municipioId }
+            });
+        }
+    }
+    console.log(`[SEED_SUCCESS] Distritos sincronizados.`);
+
+    // Agregar clientes de ejemplo con datos completos (direcciones y documentos)
+    const distritosEjemplo = await prisma.distrito.findMany({ take: 2 });
+    const distrito1 = distritosEjemplo[0]?.id;
+    const distrito2 = distritosEjemplo[1]?.id;
+
+    const cliente1 = await prisma.cliente.create({
+        data: {
+            nombres: "Juan Carlos",
+            apellidos: "Pérez Gómez",
+            fechaNacimiento: new Date("1990-05-15"),
+            estado: true, // Activo
+            direcciones: {
+                create: [
+                    {
+                        direccion: "Calle Principal",
+                        ciudad: "San Salvador",
+                        distritoId: distrito1,
+                        referenciaPrimaria: "Colonia Escalón",
+                        referenciaEspecifica: "Casa 12",
+                        puntoReferencia: "Cerca del parque",
+                        es_ubicacion_personalizada: false
+                    }
+                ]
+            },
+            documentos: {
+                create: [
+                    {
+                        tipoDocumento: "DUI",
+                        numero: "012345678"
+                    }
+                ]
+            }
+        }
+    });
+
+    const cliente2 = await prisma.cliente.create({
+        data: {
+            nombres: "María Elena",
+            apellidos: "López Silva",
+            fechaNacimiento: new Date("1985-08-22"),
+            estado: false, // Inactivo
+            direcciones: {
+                create: [
+                    {
+                        direccion: "Avenida Los Cedros",
+                        ciudad: "Santa Tecla",
+                        distritoId: distrito2,
+                        referenciaPrimaria: "Residencial Los Cipreses",
+                        referenciaEspecifica: "Polígono A, Lote 5",
+                        puntoReferencia: "Frente al supermercado",
+                        es_ubicacion_personalizada: false
+                    }
+                ]
+            },
+            documentos: {
+                create: [
+                    {
+                        tipoDocumento: "DUI",
+                        numero: "087654321"
+                    },
+                    {
+                        tipoDocumento: "NIT",
+                        numero: "06142208851021"
+                    }
+                ]
+            }
+        }
+    });
+
+    console.log(`[SEED_SUCCESS] Clientes de ejemplo insertados: ${cliente1.nombres} (Activo) y ${cliente2.nombres} (Inactivo).`);
 }
 
-// Ejecucion aislada y gestion estricta de la conexion a base de datos
 main()
     .catch((e) => {
         console.error('[SEED_ERROR]', e);
